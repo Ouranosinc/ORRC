@@ -10,7 +10,7 @@ def main():
     for subfolder in ["RDPS", "CaPA_coarse"]:
         for date in dates:
             request = url_base.format(subfolder=subfolder, date=date)
-            output_file = f"code/data/{subfolder}/{date}.nc"
+            output_file = f"code/netcdf/{subfolder}/{date}.nc"
             #download_one(output_file, subfolder, request)
             alljobs.append((output_file, subfolder, request))
     
