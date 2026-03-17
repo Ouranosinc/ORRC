@@ -1,0 +1,19 @@
+name: orrc
+channels:
+  - conda-forge
+dependencies:
+  - xscen>=0.13.1
+  - Click
+  - dask
+  - openpyxl
+  - pandas
+  - requests
+  - pandoc
+  - bioconda::snakemake
+  - fortiers::fstd2nc
+  - cdsapi
+  - globus-cli
+  - rclone
+  - pip
+  - pip:
+    - miranda==0.6.0
