@@ -22,7 +22,7 @@ The ORRC workflow runs in a Conda environment and requires several packages. Cre
 
 ```bash
 conda env create -f environment.yml
-conda activate ouracat
+conda activate orrc
 ```
 
 ## Configuration 
