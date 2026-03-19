@@ -13,7 +13,8 @@ def main():
             output_file = f"code/netcdf/{subfolder}/{date}.nc"
             #download_one(output_file, subfolder, request)
             alljobs.append((output_file, subfolder, request))
-    
+    # download casr target files
+    alljobs.append(("code/netcdf/CaSR_v32/2026010100.nc", "CaSR_v32", "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/fileServer/birdhouse/testdata/ORRC/netcdf/CaSR_v32/casr_v32_2024010112.nc")  )
     if alljobs:
         for ntry in range(5):  # try up to 5 times
             # download files in parallel
