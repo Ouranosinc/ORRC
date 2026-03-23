@@ -1,14 +1,18 @@
 main:
   logging_dir: "code/processed/orrc_logs"
   staging_dir: "code/staging"
+  reconstruction_dir: "reconstruction"
   working_dir: "code/tmp_workdir"
 
 biasadjust:
   overwrite: False   
+  frequency: day
+  domain: NAM 
   ref_product:
     v1.0:
       source: CaSR
       version: v3.2
+      url: "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/dodsC/datasets/reanalyses/day_NAM_GovCan_CaSR_v32_1980-2024.ncml"
   ref_period:
     v1.0:
       start_date: 2019-01-01
@@ -46,32 +50,6 @@ biasadjust:
           window: 31
           group_abbr: doy
         kind: "*"
-
-extract:
-  search_data_catalogs:
-    ORRC:
-      data_catalogs: null  # not used in the test workflow, to be inputted by the user 
-      variables_and_freqs:
-        tas: D
-        tasmax: D
-        tasmin: D
-        pr: D
-      other_search_criteria:
-        source: ORRC
-        domain: NAM
-      allow_conversion: True  # for (tasmax, tasmin)-> tas
-      allow_resampling: True  # To get from hourly to daily
-    CaSR:
-      data_catalogs: null  # not used in the test workflow, to be inputted by the user
-      variables_and_freqs:
-        tas: D
-        tasmax: D
-        tasmin: D
-        pr: D
-      other_search_criteria:
-        domain: NAM
-      allow_conversion: True  
-      allow_resampling: True 
 
 attrs:
   Conventions: "CF-1.8"
