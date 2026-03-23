@@ -8,6 +8,12 @@ biasadjust:
   overwrite: False   
   frequency: day
   domain: NAM 
+  apply_on: "staging"    # "staging" or "url"
+  biasadj_product:
+    v1.0:
+      source: ORRC
+      version: v1.0
+      url: ""
   ref_product:
     v1.0:
       source: CaSR

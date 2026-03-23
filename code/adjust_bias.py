@@ -60,6 +60,22 @@ def main(config, version):
 
     logging.info(f"Overwrite option is set to {overwrite}.")
 
+    ba_product = dict(CONFIG["biasadjust"]["biasadj_product"])
+    if version not in ba_product:
+        raise ValueError(
+            f"Version {version} not found in biasadjust.biasadj_product in config file."
+        )
+    
+    ba_source = ba_product[version]["source"]
+    ba_version = ba_product[version]["version"]
+    ba_url = ba_product[version]["url"]
+    apply_on = CONFIG["biasadjust"]["apply_on"]
+
+    if not ba_url:
+        raise ValueError(
+            f"biasadjust.biasadj_product.{version}.url is empty, but it is required to train the bias adjustment."
+        )
+
     ref_product = dict(CONFIG["biasadjust"]["ref_product"])
     if version not in ref_product:
         raise ValueError(
@@ -81,6 +97,7 @@ def main(config, version):
 
     var_specs = dict(CONFIG["biasadjust"]["variables"])
 
+    ds_ba_train_all = xr.open_dataset(ba_url, engine="netcdf4")
     ds_ref_all = xr.open_dataset(ref_url, engine="netcdf4")
 
     all_zarrzip = list((reconstruction_root / domain).rglob("*.zarr.zip"))
@@ -105,44 +122,28 @@ def main(config, version):
                 ds.close()
                 continue
 
-            if source_attr == "ORRC" and version_attr == version:
+            if source_attr == ba_source and version_attr == ba_version:
                 mod_files.append(file)
 
             ds.close()
         
-        if len(mod_files) == 0:
-            raise FileNotFoundError(
-                f"No model files found for var='{var}', source='ORRC', version='{version}', "
-                f"frequency='{frequency}', domain='{domain}'."
-            )
-        
-        # open the dataset
-        mod_datasets = [xr.open_zarr(file, consolidated=True, chunks={}) for file in sorted(mod_files)]
+        if var not in ds_ba_train_all.data_vars:
+            raise KeyError(f"Variable '{var}' not found in the bias adjustment dataset {ba_source} {ba_version} at {ba_url}.")
+        if var not in ds_ref_all.data_vars:
+            raise KeyError(f"Variable '{var}' not found in the reference dataset {ref_source} {ref_version} at {ref_url}.")
 
-        if len(mod_datasets) == 1:
-            ds_mod = mod_datasets[0]
-        else:
-            ds_mod = xr.concat(
-                mod_datasets,
-                dim="time",
-                data_vars="minimal",
-                coords="minimal",
-                compat="override",
-                combine_attrs="override",
-            ).sortby("time")
-
+        ds_ba_train = ds_ba_train_all[[var]]
         ds_ref = ds_ref_all[[var]]
 
-        mod_start = pd.Timestamp(ds_mod.time.min().values)
-        mod_end = pd.Timestamp(ds_mod.time.max().values)
-
+        ba_train_start = pd.Timestamp(ds_ba_train.time.min().values)
+        ba_train_end = pd.Timestamp(ds_ba_train.time.max().values)
         ref_start = pd.Timestamp(ds_ref.time.min().values)
         ref_end = pd.Timestamp(ds_ref.time.max().values)
 
-        if config_end < mod_start or config_start > mod_end:
+        if config_end < ba_train_start or config_start > ba_train_end:
             logging.warning(
                 f"Requested ref_period [{config_start}, {config_end}] does not overlap "
-                f"with ORRC data for var='{var}' [{mod_start}, {mod_end}]."
+                f"with bias adjustment {ba_source} {ba_version} data for var='{var}' [{ba_train_start}, {ba_train_end}]."
             )
 
         if config_end < ref_start or config_start > ref_end:
@@ -151,24 +152,53 @@ def main(config, version):
                 f"with reference {ref_source} {ref_version} data for var='{var}' [{ref_start}, {ref_end}]."
             )
 
-        start_date = max(config_start, mod_start, ref_start)
-        end_date = min(config_end, mod_end, ref_end)
+        train_start = max(config_start, ba_train_start, ref_start)
+        train_end = min(config_end, ba_train_end, ref_end)
 
-        if start_date > end_date:
+        if train_start > train_end:
             raise ValueError(
-                f"No usable overlap for var='{var}'. "
+                f"No usable training overlap for var='{var}'. "
                 f"Requested=[{config_start}, {config_end}], "
-                f"ORRC=[{mod_start}, {mod_end}], "
+                f"{ba_source} {ba_version}=[{ba_train_start}, {ba_train_end}], "
                 f"reference {ref_source} {ref_version}=[{ref_start}, {ref_end}]"
             )
 
-        ds_mod_per = ds_mod.sel(time=slice(start_date, end_date))
-        ds_ref_per = ds_ref.sel(time=slice(start_date, end_date))
+        ds_ba_per = ds_ba_train.sel(time=slice(train_start, train_end))
+        ds_ref_per = ds_ref.sel(time=slice(train_start, train_end))
+
+        # apply bias adjustment to either the data from the URL or the local staging files
+        if apply_on == "url":
+            ds_apply = ds_ba_train
+
+        elif apply_on == "staging":
+            if len(mod_files) == 0:
+                raise FileNotFoundError(
+                    f"No local staging files found for var='{var}', source='{ba_source}', version='{ba_version}', frequency='{frequency}', domain='{domain}'."
+                )
+
+            local_datasets = [xr.open_zarr(file, consolidated=True, chunks={})[[var]] for file in sorted(mod_files)]
+
+            if len(local_datasets) == 1:
+                ds_apply = local_datasets[0]
+            else:
+                ds_apply = xr.concat(
+                    local_datasets,
+                    dim="time",
+                    data_vars="minimal",
+                    coords="minimal",
+                    compat="override",
+                    combine_attrs="override",
+                ).sortby("time")
+
+        else:
+            raise ValueError(
+                f"Unsupported biasadjust.apply_on: {apply_on}. Expected 'url' or 'staging'."
+            )
 
         # create bias_adjust_reference string for global attributes
         bias_adjust_reference = (
             f"{ref_source} {ref_version.replace('.', '')} "
-            f"{start_date.year}-{end_date.year}"
+            f"{train_start.year}-{train_end.year}"
         )
 
         # get bias adj specs for this variable
@@ -189,6 +219,7 @@ def main(config, version):
 
         global_attrs = {
             **CONFIG["attrs"],
+            "frequency": frequency,
             "bias_adjust_project": f"ORRC-a-{version.replace('.', '')}",
             "bias_adjust_reference": bias_adjust_reference,
             "bias_adjust_method": bias_adjust_method,
@@ -202,8 +233,8 @@ def main(config, version):
 
         # prepare data: # xsdba requires time to be one contiguous chunk and no rotated_pole coord
         var_ref_per = ds_ref_per[var].drop_vars(['rotated_pole'], errors="ignore").chunk({'time': -1}) 
-        var_mod_per = ds_mod_per[var].drop_vars(['rotated_pole'], errors="ignore").chunk({'time': -1})
-        var_mod = ds_mod[var].drop_vars(['rotated_pole'], errors="ignore").chunk({'time': -1})
+        var_mod_per = ds_ba_per[var].drop_vars(['rotated_pole'], errors="ignore").chunk({'time': -1})
+        var_mod = ds_apply[var].drop_vars(['rotated_pole'], errors="ignore").chunk({'time': -1})
 
         # bias adjustment
         xsdba_method = getattr(xsdba, method)
@@ -219,8 +250,8 @@ def main(config, version):
         adj_var = trained_obj.adjust(var_mod)
         ds_adj[var] = adj_var
         # copy back rotated_pole
-        if "rotated_pole" in ds_mod.coords:
-            ds_adj = ds_adj.assign_coords(rotated_pole=ds_mod.rotated_pole)
+        if "rotated_pole" in ds_apply.coords:
+            ds_adj = ds_adj.assign_coords(rotated_pole=ds_apply.rotated_pole)
     
         fmt = "zarr"
         facets = {
