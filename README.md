@@ -4,7 +4,7 @@ Ouranos Reconstruction – RDPS-CaPA (ORRC) version 1.0 is a dataset designed to
 
 ORRC v1.0 provides hourly surface and near-surface meteorological fields at 0.09° (~10 km) resolution on a rotated regular latitude–longitude grid covering North America, Central America, and nearly all of Greenland, from 2015 to present. It supports near-real-time climate monitoring and is intended for operational climate services, event monitoring, and the routine update of climate indicators without waiting for future CaSR releases.
 
-More details about ORRC v1.0 are available in the [documentation](/exec/abese/ORRC/documentation/ORRC_methodology.pdf). 
+More details about ORRC v1.0 are available in the [documentation](/exec/abese/ORRC/documentation/ORRC_v10.pdf). 
 
 This repository contains a minimal example of the ORRC workflow using one week of test data. It includes the core processing steps extracted from the broader production pipeline:
 
@@ -70,7 +70,7 @@ Create the hourly ORRC dataset:
 python code/preprocess_orrc.py
 ```
 
-To generate ORRC, consecutive RDPS forecast segments are concatenated to form a continuous hourly time series. The resulting 24-hour reporting window spans from 13 UTC to 12 UTC of the following calendar day. To produce a CaSR-like precipitation field, hourly RDPS precipitation increments are scaled so that each 6-hour accumulation matches the corresponding CaPA total. A more detailed description of the precipitation blending procedure is available in Section 2.3.2 of the [documentation](documentation/ORRC_methodology.pdf).
+To generate ORRC, consecutive RDPS forecast segments are concatenated to form a continuous hourly time series. The resulting 24-hour reporting window spans from 13 UTC to 12 UTC of the following calendar day. To produce a CaSR-like precipitation field, hourly RDPS precipitation increments are scaled so that each 6-hour accumulation matches the corresponding CaPA total. A more detailed description of the precipitation blending procedure is available in Section 2.3.2 of the [documentation](documentation/ORRC_v10.pdf).
 
 ### 4. Convert to CF-compliant output and compute daily aggregates
 Apply Climate and Forecast (CF) variable and metadata conventions using the Miranda library, compute daily aggregates as well as daily minimum and maximum for the specified variables, and save each variable as a separate `.zarr.zip` time series in hourly and daily formats in the staging directory defined in the configuration file:
@@ -86,7 +86,7 @@ Apply bias adjustment to align ORRC v1.0 with CaSR v3.2:
 python code/adjust_bias.py
 ```
 
-This step produces the bias-adjusted variant of ORRC (ORRC-a) data for a subset of daily variables, according to the specifications in `code/data/config_biasadj.yml`. The adjustment is trained over the reference period defined in that configuration file, using the ORRC dataset available from the [Ouranos THREDDS Data Server](https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/birdhouse/ouranos/catalog.html) as the product to be adjusted and CaSR v3.2 as the reference dataset. Each bias-adjusted variable is saved as a separate `.zarr.zip` time series. Details of the bias-adjustment method are described in Section 2.3.3 of the [documentation](documentation/ORRC_methodology.pdf). 
+This step produces the bias-adjusted variant of ORRC (ORRC-a) data for a subset of daily variables, according to the specifications in `code/data/config_biasadj.yml`. The adjustment is trained over the reference period defined in that configuration file, using the ORRC dataset available from the [Ouranos THREDDS Data Server](https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/birdhouse/ouranos/catalog.html) as the product to be adjusted and CaSR v3.2 as the reference dataset. Each bias-adjusted variable is saved as a separate `.zarr.zip` time series. Details of the bias-adjustment method are described in Section 2.3.3 of the [documentation](documentation/ORRC_v10.pdf). 
 
 The bias-adjustment workflow is designed to support two application modes:
 
@@ -96,7 +96,7 @@ The bias-adjustment workflow is designed to support two application modes:
 Users who want to bias-adjust variables beyond those included in the ORRC-a v1.0 dataset should add a new entry for each variable in the bias-adjustment configuration file and set the appropriate `apply_on` mode depending on whether they want to process the full dataset from THREDDS or only the locally generated staging data.
 
 ## Performance
-We evaluated ORRC against CaSR v3.2 over the overlapping 2019–2024 period for the full set of variables. Details of the evaluation are available in the [documentation](documentation/ORRC_methodology.pdf). The main conclusions are:
+We evaluated ORRC against CaSR v3.2 over the overlapping 2019–2024 period for the full set of variables. Details of the evaluation are available in the [documentation](documentation/ORRC_v10.pdf). The main conclusions are:
 
 - Over the full spatial domain, agreement between ORRC and CaSR v3.2 is strongest for temperature, dew point, and pressure variables, with generally low normalized errors. Errors are larger for humidity, wind, and radiation, while precipitation is the most challenging variable, especially in dry regions and during seasons with low mean precipitation, where normalization inflates relative errors. Corresponding error maps are available in [documentation/figures/nrmse](documentation/figures/nrmse/).
 - In the regional evaluation based on Bukovsky regions, ORRC agrees well with CaSR v3.2 for most variables, particularly temperature, dew point, pressure, and radiation. The largest regional mismatches occur for relative humidity and precipitation, which show greater spread and error. Corresponding Taylor diagrams are available in [documentation/figures/taylor_diagrams](documentation/figures/taylor_diagrams).
