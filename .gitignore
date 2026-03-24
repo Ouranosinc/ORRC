@@ -210,3 +210,4 @@ __marimo__/
 code/processed/
 code/netcdf/
 code/staging/
+code/tmp_workdir
