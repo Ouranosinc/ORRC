@@ -67,7 +67,7 @@ This step performs completeness checks, identifies missing files and variables, 
 Create the hourly ORRC dataset:
 
 ```bash
-python code/preprocess_orrc.py
+python code/create_orrc.py
 ```
 
 To generate ORRC, consecutive RDPS forecast segments are concatenated to form a continuous hourly time series. The resulting 24-hour reporting window spans from 13 UTC to 12 UTC of the following calendar day. To produce a CaSR-like precipitation field, hourly RDPS precipitation increments are scaled so that each 6-hour accumulation matches the corresponding CaPA total. A more detailed description of the precipitation blending procedure is available in Section 2.3.2 of the [documentation](documentation/ORRC_v10.pdf).
