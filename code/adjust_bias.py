@@ -97,8 +97,8 @@ def main(config, version):
 
     var_specs = dict(CONFIG["biasadjust"]["variables"])
 
-    ds_ba_train_all = xr.open_dataset(ba_url, engine="netcdf4")
-    ds_ref_all = xr.open_dataset(ref_url, engine="netcdf4")
+    ds_ba_train_all = xr.open_dataset(ba_url, engine="netcdf4", chunks=dict(time=(365*4)+1, rlat=50, rlon=50))
+    ds_ref_all = xr.open_dataset(ref_url, engine="netcdf4", chunks=dict(time=(365*4)+1, rlat=50, rlon=50))
 
     all_zarrzip = list((reconstruction_root / domain).rglob("*.zarr.zip"))
 
