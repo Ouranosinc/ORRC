@@ -1,0 +1,155 @@
+Files:
+  raw_dir: "code/netcdf"   
+  processed_dir: "code/processed"
+  tgt_file_v10: "code/netcdf/CaSR_v32/casr_v32_2024010112.nc" 
+  staging_dir: "code/staging"
+  working_dir: "code/tmp_workdir"
+  logging_dir: "code/processed/orrc_logs"
+
+Settings:
+  # ORRC version
+  versions:
+    - v1.0
+  # if precipitation_analysis_bool is True, RDPS precipitation adjusted with CaPA 6-hour totals will be included in the output files
+  precipitation_analysis_bool: True
+  # Overwrite option is available for each step of the workflow, and can be set to True or False independently
+  preprocess_overwrite: False 
+  create_orrc_overwrite: False
+  convert_orrc_overwrite: False
+  # uas and vas contain erroneous values in the CaSPAr archive from June 11, 2024 onward, due to a change in grid definition
+  # these variables are set to NaN in ORRC v1.0 from June 11, 2024 until access to GPSC-C became available on April 1, 2025.  
+  mask:
+    variables: ["uas", "vas"]
+    day:
+      start_time: "2024-06-11T00:00:00.000000000"
+      end_time: "2025-04-01T00:00:00.000000000"
+    1hr:
+      start_time: "2024-06-11T19:00:00.000000000"
+      end_time: "2025-04-01T06:00:00.000000000"
+
+
+Variables:
+  RDPS:
+    - name: RDPS_P_P0_SFC
+      attributes:
+        long_name: "Forecast: Surface pressure"
+        units: "mb"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_FB_SFC
+      attributes:
+        long_name: "Forecast: Downward solar flux"
+        units: "W m**-2"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_FI_SFC
+      attributes:
+        long_name: "Forecast: Surface incoming infrared flux"
+        units: "W m**-2"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_PN_SFC
+      attributes:
+        long_name: "Forecast: Sea level pressure"
+        units: "mb"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_PR_SFC
+      attributes:
+        long_name: "Forecast: Quantity of precipitation"
+        units: "m"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_RN_SFC
+      attributes:
+        long_name: "Forecast: Rain (QPF)"
+        units: "m"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_TD_10000
+      attributes:
+        long_name: "Forecast: Dew point temperature"
+        units: "deg_C"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_TT_10000
+      attributes:
+        long_name: "Forecast: Air temperature"
+        units: "deg_C"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_HU_10000
+      attributes:
+        long_name: "Forecast: Specific humidity"
+        units: "kg kg**-1"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_HR_10000
+      attributes:
+        long_name: "Forecast: Relative humidity (fraction)"
+        units: "1"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_UUC_10000
+      attributes:
+        long_name: "Forecast: corrected U-component of the wind (along West-East direction)"
+        units: "kts"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_VVC_10000
+      attributes:
+        long_name: "Forecast: corrected V-component of the wind (along South-North direction)"
+        units: "kts"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_UVC_10000
+      attributes:
+        long_name: "Forecast: Wind Modulus (derived using UU and VV)"
+        units: "kts"
+        grid_mapping: "rotated_pole"
+    - name: RDPS_P_WDC_10000
+      attributes:
+        long_name: "Forecast: Meteorological wind direction (derived using UU and VV)"
+        units: "deg"
+        grid_mapping: "rotated_pole"
+  CaPA_coarse:
+    - name: CaPA_coarse_A_PR_SFC
+      attributes:
+        long_name: "Analysis: Quantity of precipitation"
+        units: "m"
+        grid_mapping: "rotated_pole"
+
+
+Coordinates: 
+  # list of coordinate variables except for time
+  coordinate_vars:
+    - lat
+    - lon
+    - rlat
+    - rlon
+    - rotated_pole
+
+
+Time:
+  # 6- to 12-hour forecast lead times are used from each RDPS cycle
+  required_rdps_time_window: 
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    - 11
+    - 12
+
+
+Target_variables:
+  Hourly:
+    - ps
+    - rsds
+    - rlds
+    - psl
+    - tdps
+    - tas
+    - huss
+    - hurs
+    - uas
+    - vas
+    - winddir
+    - sfcWind
+    - pr
+    - prmod
+  Daily_aggregates:
+    - tasmin
+    - tasmax
+    - hursmin
+    - hursmax
+    - tdpsmin
+    - tdpsmax

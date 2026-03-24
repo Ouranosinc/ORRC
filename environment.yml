@@ -1,0 +1,12 @@
+name: orrc
+channels:
+  - conda-forge
+dependencies:
+  - xscen>=0.13.1
+  - Click
+  - dask
+  - requests
+  - numpy==2.3.3
+  - pip
+  - pip:
+    - git+https://github.com/Ouranosinc/miranda.git@main
