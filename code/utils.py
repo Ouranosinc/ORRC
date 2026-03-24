@@ -1008,7 +1008,8 @@ def zarr_to_zarr_zip(dsout : xr.Dataset, outpath : Path, variable : xr.DataArray
     -------
     None.
     """
-    with TemporaryDirectory(prefix=f"{working_dir.as_posix()}/") as tmpdir:
+    working_dir.mkdir(parents=True, exist_ok=True)
+    with TemporaryDirectory(dir=working_dir) as tmpdir:
         tmpfile = Path(tmpdir).joinpath(outpath.name)
         chunks = {d: 50 for d in dsout[variable].dims if d != 'time'}
         chunks['time'] = timechunk
