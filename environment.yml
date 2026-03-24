@@ -5,15 +5,8 @@ dependencies:
   - xscen>=0.13.1
   - Click
   - dask
-  - openpyxl
-  - pandas
   - requests
-  - pandoc
-  - bioconda::snakemake
-  - fortiers::fstd2nc
-  - cdsapi
-  - globus-cli
-  - rclone
+  - numpy==2.3.3
   - pip
   - pip:
-    - miranda==0.6.0
+    - git+https://github.com/Ouranosinc/miranda.git@main
