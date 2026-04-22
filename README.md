@@ -4,7 +4,7 @@ Ouranos Reconstruction – RDPS-CaPA (ORRC) version 1.0 is a dataset designed to
 
 ORRC v1.0 provides hourly surface and near-surface meteorological fields at 0.09° (~10 km) resolution on a rotated regular latitude–longitude grid covering North America, Central America, and nearly all of Greenland, from 2015 to present. It supports near-real-time climate monitoring and is intended for operational climate services, event monitoring, and the routine update of climate indicators without waiting for future CaSR releases.
 
-More details about ORRC v1.0 are available in the [documentation](ORRC/documentation/ORRC_v10.pdf). 
+More details about ORRC v1.0 are available in the [documentation](documentation/ORRC_v10.pdf). 
 
 This repository contains a minimal example of the ORRC workflow using one week of test data. It includes the core processing steps extracted from the broader production pipeline:
 
