@@ -50,11 +50,6 @@ Variables:
         long_name: "Forecast: Sea level pressure"
         units: "mb"
         grid_mapping: "rotated_pole"
-    - name: RDPS_P_PR_SFC
-      attributes:
-        long_name: "Forecast: Quantity of precipitation"
-        units: "m"
-        grid_mapping: "rotated_pole"
     - name: RDPS_P_RN_SFC
       attributes:
         long_name: "Forecast: Rain (QPF)"
@@ -145,6 +140,7 @@ Target_variables:
     - winddir
     - sfcWind
     - pr
+    - prmod
   Daily_aggregates:
     - tasmin
     - tasmax

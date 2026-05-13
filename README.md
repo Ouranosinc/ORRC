@@ -8,7 +8,7 @@ More details about ORRC v1.0 are available in the [documentation](documentation/
 
 This repository contains a minimal example of the ORRC workflow using one week of test data. It includes the core processing steps extracted from the broader production pipeline:
 
-1. Download RDPS, CaPA and CaSR v3.2 test data from the Ouranos THREDDS Data Server.
+1. Download RDPS, CaPA-6h, CaPA-24h, and CaSR v3.2 test data from the Ouranos THREDDS Data Server.
 2. Preprocess RDPS and CaPA data, including consistency and completeness checks of the raw files and interpolation onto the CaSR v3.2 grid.
 3. Create hourly ORRC data by combining consecutive 6- to 12-hour forecast lead-time segments from each RDPS cycle for all variables and blending RDPS precipitation fields with CaPA precipitation. ORRC output is saved as one NetCDF file per day.
 4. Convert ORRC variables and metadata to Climate and Forecast (CF) conventions, produce daily aggregates, and save each variable as a continuous `.zarr.zip` time series.
@@ -52,7 +52,7 @@ Download one week of RDPS and CaPA test data, as well as CaSR v3.2 target data f
 python code/download_testdata.py
 ```
 
-This script saves 6- to 12-hour forecast lead times from each RDPS cycle at 00, 06, 12, and 18 UTC as separate NetCDF files in the RDPS directory. The RDPS files includes the variables specified in `code/data/config_orrc.yml`. It also saves CaPA 6-hour precipitation accumulations at 00, 06, 12, and 18 UTC as separate NetCDF files in the CaPA_coarse directory, along with one day of CaSR v3.2 data used to regrid RDPS and CaPA data in the CaSR_v32 directory.
+This script saves 6- to 12-hour forecast lead times from each RDPS cycle at 00, 06, 12, and 18 UTC as separate NetCDF files in the RDPS directory. It also saves CaPA 6-hour precipitation accumulations at 00, 06, 12, and 18 UTC in the CaPA_coarse directory, CaPA 24-hour accumulations at 12 UTC in the CaPA_24h directory, and one day of CaSR v3.2 data in the CaSR_v32 directory for regridding RDPS and CaPA data.
 
 ### 2. Preprocess RDPS and CaPA
 Preprocess the downloaded RDPS and CaPA files:
@@ -70,7 +70,7 @@ Create the hourly ORRC dataset:
 python code/create_orrc.py
 ```
 
-To generate ORRC, consecutive RDPS forecast segments are concatenated to form a continuous hourly time series. The resulting 24-hour reporting window spans from 13 UTC to 12 UTC of the following calendar day. To produce a CaSR-like precipitation field, hourly RDPS precipitation increments are scaled so that each 6-hour accumulation matches the corresponding CaPA total. A more detailed description of the precipitation blending procedure is available in Section 2.3.2 of the [documentation](documentation/ORRC_v10.pdf).
+To generate ORRC, consecutive RDPS forecast segments are concatenated to form a continuous hourly time series. The resulting 24-hour reporting window spans from 13 UTC to 12 UTC of the following calendar day. To produce a CaSR-like precipitation field, hourly RDPS precipitation increments are scaled to the CaPA-6h and CaPA-24h accumulations. A more detailed description of the precipitation blending procedure is available in Section 2.3.2 of the [documentation](documentation/ORRC_v10.pdf).
 
 ### 4. Convert to CF-compliant output and compute daily aggregates
 Apply Climate and Forecast (CF) variable and metadata conventions using the Miranda library, compute daily aggregates as well as daily minimum and maximum for the specified variables, and save each variable as a separate `.zarr.zip` time series in hourly and daily formats in the staging directory defined in the configuration file:

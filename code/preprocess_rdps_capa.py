@@ -32,7 +32,7 @@ def main(version, tgt_file, all_vars, weights_dir, coordinate_vars, infolder=Non
        
     # load logs of previous successful jobs
     log = get_logs(logfile=logfile) # successful jobs must include 'finished'
-    logging.info(f"ORRC version set to: {version}. Preprocessing RDPS and CaPA_coarse onto the target grid: {tgt_file}.")
+    logging.info(f"ORRC version set to: {version}. Preprocessing RDPS, CaPA_coarse and CaPA_24h onto the target grid: {tgt_file}.")
 
     ds_tgt = xr.open_dataset(tgt_file).isel(time=0).drop_vars("time") # only need lat-lon 
 
@@ -131,8 +131,8 @@ def main(version, tgt_file, all_vars, weights_dir, coordinate_vars, infolder=Non
                 days_in_month = (first_of_month + pd.offsets.MonthEnd(1)).day
 
                 all_days_complete = True
-                required_hours = {"00", "06", "12", "18"}
-
+                # RDPS and CaPA_coarse should have 4 files per day (00, 06, 12, 18), while CaPA_24h products only have 1 file per day (12)
+                required_hours = {"00", "06", "12", "18"} if sub_dir.name in ['RDPS', 'CaPA_coarse'] else {"12"}
                 # check for each day in the month if all 4 hours exist
                 # when it finds any day that is missing altogether or missing some required hours, break and log incomplete
                 for day_int in range(1, days_in_month + 1):
@@ -150,7 +150,7 @@ def main(version, tgt_file, all_vars, weights_dir, coordinate_vars, infolder=Non
 
                 if all_days_complete:
                     logger.info(f'finished:{logentry}')
-                    print(f"Finished (all 6-hourly files found in outfolder): {logentry}")
+                    print(f"Finished (all files found in outfolder): {logentry}")
                 else:
                     logger.info(f'incomplete:{logentry}')
                     print(f"Incomplete (some days/hours missing in outfolder): {logentry}")
@@ -160,23 +160,29 @@ def main(version, tgt_file, all_vars, weights_dir, coordinate_vars, infolder=Non
     # go through the regridded RDPS and CaPA_coarse files, find missing files and fill them 
     RDPS_regridded_dir = outfolder.joinpath(f"RDPS_regridded", "NAM") 
     RDPS_regridded_dir.mkdir(parents=True, exist_ok=True)
-    CaPA_regridded_dir = outfolder.joinpath(f"CaPA_coarse_regridded", "NAM") 
-    CaPA_regridded_dir.mkdir(parents=True, exist_ok=True)
+    CaPA6h_regridded_dir = outfolder.joinpath(f"CaPA_coarse_regridded", "NAM") 
+    CaPA6h_regridded_dir.mkdir(parents=True, exist_ok=True)
+    CaPA24h_regridded_dir = outfolder.joinpath(f"CaPA_24h_regridded", "NAM")
+    CaPA24h_regridded_dir.mkdir(parents=True, exist_ok=True)
 
     RDPS_files = sorted(list(RDPS_regridded_dir.glob('*.nc')))
-    CaPA_files = sorted(list(CaPA_regridded_dir.glob('*.nc')))
+    CaPA6h_files = sorted(list(CaPA6h_regridded_dir.glob('*.nc')))
+    CaPA24h_files = sorted(list(CaPA24h_regridded_dir.glob('*.nc')))
 
-    if RDPS_files and CaPA_files:
+    if RDPS_files and CaPA6h_files and CaPA24h_files:
         first_date_RDPS = RDPS_files[0].stem[0:8]
         last_date_RDPS = RDPS_files[-1].stem[0:8]
 
-        first_date_CaPA = CaPA_files[0].stem[0:8]
-        last_date_CaPA = CaPA_files[-1].stem[0:8]
+        first_date_CaPA6h = CaPA6h_files[0].stem[0:8]
+        last_date_CaPA6h = CaPA6h_files[-1].stem[0:8]
 
-        # find the common date range between RDPS and CaPA_coarse
-        first_date = max(int(first_date_RDPS), int(first_date_CaPA))
-        last_date = min(int(last_date_RDPS), int(last_date_CaPA))
-        
+        first_date_CaPA24h = CaPA24h_files[0].stem[0:8]
+        last_date_CaPA24h = CaPA24h_files[-1].stem[0:8]
+
+        # find the common date range between RDPS, CaPA_coarse and CaPA_24h
+        first_date = max(int(first_date_RDPS), int(first_date_CaPA6h), int(first_date_CaPA24h))
+        last_date = min(int(last_date_RDPS), int(last_date_CaPA6h), int(last_date_CaPA24h))
+
         start_date = date(
             int(str(first_date)[0:4]),
             int(str(first_date)[4:6]),
@@ -219,26 +225,31 @@ def main(version, tgt_file, all_vars, weights_dir, coordinate_vars, infolder=Non
         run_start = new_start_date
 
         all_valid_RDPS_files = []
-        all_valid_CaPA_files = []
+        all_valid_CaPA6h_files = []
+        all_valid_CaPA24h_files = []
         all_missing_RDPS_files = []
-        all_missing_CaPA_files = []
+        all_missing_CaPA6h_files = []
+        all_missing_CaPA24h_files = []
 
         while new_start_date <= end_date:
             
             # read the input netCDF files
-            valid_RSPS_files, valid_CaPA_files, missing_RDPS_files, missing_CaPA_files = check_files(RDPS_regridded_dir, CaPA_regridded_dir, new_start_date)        
+            valid_RSPS_files, valid_CaPA6h_files, valid_CaPA24h_files, missing_RDPS_files, missing_CaPA6h_files, missing_CaPA24h_files = check_files(RDPS_regridded_dir, CaPA6h_regridded_dir, CaPA24h_regridded_dir, new_start_date)        
             
             all_valid_RDPS_files.extend(valid_RSPS_files)
-            all_valid_CaPA_files.extend(valid_CaPA_files)
+            all_valid_CaPA6h_files.extend(valid_CaPA6h_files)
+            all_valid_CaPA24h_files.extend(valid_CaPA24h_files)
             all_missing_RDPS_files.extend(missing_RDPS_files)
-            all_missing_CaPA_files.extend(missing_CaPA_files)
+            all_missing_CaPA6h_files.extend(missing_CaPA6h_files)
+            all_missing_CaPA24h_files.extend(missing_CaPA24h_files)
 
             # increment the start date
             new_start_date += timedelta(days = 1)
         
         # create the missing files
         create_file(all_missing_RDPS_files, all_valid_RDPS_files, coordinate_vars)
-        create_file(all_missing_CaPA_files, all_valid_CaPA_files, coordinate_vars)
+        create_file(all_missing_CaPA6h_files, all_valid_CaPA6h_files, coordinate_vars)
+        create_file(all_missing_CaPA24h_files, all_valid_CaPA24h_files, coordinate_vars)
 
         # log entry for the whole period
         logentry_mfiles = f"check_missing_files:{run_start.strftime('%Y%m%d')}_{last_date}"
