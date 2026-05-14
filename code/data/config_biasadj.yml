@@ -21,8 +21,8 @@ biasadjust:
       url: "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/dodsC/datasets/reanalyses/day_NAM_GovCan_CaSR_v32_1980-2024.ncml"
   ref_period:
     v1.0:
-      start_date: 2019-01-01
-      end_date: 2024-12-30
+      start_date: 2020-01-01
+      end_date: 2024-12-31
   variables:
     tas:
       training_args:
