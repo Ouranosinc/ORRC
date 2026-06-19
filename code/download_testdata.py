@@ -7,7 +7,7 @@ def main():
     alljobs = []
     url_base = "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/fileServer/birdhouse/testdata/ORRC/netcdf/{subfolder}/{date}.nc"
     dates = pd.date_range(start="2026-01-01", end="2026-01-09", freq='6h').strftime("%Y%m%d%H").tolist()
-    for subfolder in ["RDPS", "CaPA_coarse"]:
+    for subfolder in ["RDPS", "CaPA_coarse", "CaPA_24h"]:
         for date in dates:
             request = url_base.format(subfolder=subfolder, date=date)
             output_file = f"code/netcdf/{subfolder}/{date}.nc"

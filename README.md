@@ -8,7 +8,7 @@ More details about ORRC v1.0 are available in the [documentation](documentation/
 
 This repository contains a minimal example of the ORRC workflow using one week of test data. It includes the core processing steps extracted from the broader production pipeline:
 
-1. Download RDPS, CaPA and CaSR v3.2 test data from the Ouranos THREDDS Data Server.
+1. Download RDPS, CaPA-6h, CaPA-24h, and CaSR v3.2 test data from the Ouranos THREDDS Data Server.
 2. Preprocess RDPS and CaPA data, including consistency and completeness checks of the raw files and interpolation onto the CaSR v3.2 grid.
 3. Create hourly ORRC data by combining consecutive 6- to 12-hour forecast lead-time segments from each RDPS cycle for all variables and blending RDPS precipitation fields with CaPA precipitation. ORRC output is saved as one NetCDF file per day.
 4. Convert ORRC variables and metadata to Climate and Forecast (CF) conventions, produce daily aggregates, and save each variable as a continuous `.zarr.zip` time series.
@@ -52,7 +52,7 @@ Download one week of RDPS and CaPA test data, as well as CaSR v3.2 target data f
 python code/download_testdata.py
 ```
 
-This script saves 6- to 12-hour forecast lead times from each RDPS cycle at 00, 06, 12, and 18 UTC as separate NetCDF files in the RDPS directory. The RDPS files includes the variables specified in `code/data/config_orrc.yml`. It also saves CaPA 6-hour precipitation accumulations at 00, 06, 12, and 18 UTC as separate NetCDF files in the CaPA_coarse directory, along with one day of CaSR v3.2 data used to regrid RDPS and CaPA data in the CaSR_v32 directory.
+This script saves 6- to 12-hour forecast lead times from each RDPS cycle at 00, 06, 12, and 18 UTC as separate NetCDF files in the RDPS directory. It also saves CaPA 6-hour precipitation accumulations at 00, 06, 12, and 18 UTC in the CaPA_coarse directory, CaPA 24-hour accumulations at 12 UTC in the CaPA_24h directory, and one day of CaSR v3.2 data in the CaSR_v32 directory for regridding RDPS and CaPA data.
 
 ### 2. Preprocess RDPS and CaPA
 Preprocess the downloaded RDPS and CaPA files:
@@ -70,7 +70,7 @@ Create the hourly ORRC dataset:
 python code/create_orrc.py
 ```
 
-To generate ORRC, consecutive RDPS forecast segments are concatenated to form a continuous hourly time series. The resulting 24-hour reporting window spans from 13 UTC to 12 UTC of the following calendar day. To produce a CaSR-like precipitation field, hourly RDPS precipitation increments are scaled so that each 6-hour accumulation matches the corresponding CaPA total. A more detailed description of the precipitation blending procedure is available in Section 2.3.2 of the [documentation](documentation/ORRC_v10.pdf).
+To generate ORRC, consecutive RDPS forecast segments are concatenated to form a continuous hourly time series. The resulting 24-hour reporting window spans from 13 UTC to 12 UTC of the following calendar day. To produce a CaSR-like precipitation field, hourly RDPS precipitation increments are scaled to the CaPA-6h and CaPA-24h accumulations. A more detailed description of the precipitation blending procedure is available in Section 2.3.2 of the [documentation](documentation/ORRC_v10.pdf).
 
 ### 4. Convert to CF-compliant output and compute daily aggregates
 Apply Climate and Forecast (CF) variable and metadata conventions using the Miranda library, compute daily aggregates as well as daily minimum and maximum for the specified variables, and save each variable as a separate `.zarr.zip` time series in hourly and daily formats in the staging directory defined in the configuration file:
@@ -96,11 +96,11 @@ The bias-adjustment workflow is designed to support two application modes:
 Users who want to bias-adjust variables beyond those included in the ORRC-a v1.0 dataset should add a new entry for each variable in the bias-adjustment configuration file and set the appropriate `apply_on` mode depending on whether they want to process the full dataset from THREDDS or only the locally generated staging data.
 
 ## Performance
-We evaluated ORRC against CaSR v3.2 over the overlapping 2019–2024 period for the full set of variables. Details of the evaluation are available in the [documentation](documentation/ORRC_v10.pdf). The main conclusions are:
+We evaluated ORRC against CaSR v3.2 over the overlapping 2020–2024 period for the full set of variables. Details of the evaluation are available in the [documentation](documentation/ORRC_v10.pdf). The main conclusions are:
 
-- Over the full spatial domain, agreement between ORRC and CaSR v3.2 is strongest for temperature, dew point, and pressure variables, with generally low normalized errors. Errors are larger for humidity, wind, and radiation, while precipitation is the most challenging variable, especially in dry regions and during seasons with low mean precipitation, where normalization inflates relative errors. Corresponding error maps are available in [documentation/figures/nrmse](documentation/figures/nrmse/).
-- In the regional evaluation based on Bukovsky regions, ORRC agrees well with CaSR v3.2 for most variables, particularly temperature, dew point, pressure, and radiation. The largest regional mismatches occur for relative humidity and precipitation, which show greater spread and error. Corresponding Taylor diagrams are available in [documentation/figures/taylor_diagrams](documentation/figures/taylor_diagrams).
-- The bias-adjustment step substantially improves the magnitude and the spatial patterns of bias relative to CaSR v3.2. ORRC-a v1.0 should therefore be prioritized for applications requiring comparison with a historical baseline. Corresponding bias maps are available in [documentation/figures/bias](documentation/figures/bias).
+- Over the full spatial domain, normalized errors between ORRC and CaSR v3.2 are generally lower to moderate for temperature, dew-point temperature, radiation, and sea-level pressure. Larger and more spatially heterogeneous errors occur for relative humidity, precipitation, wind speed, and surface pressure, particularly in regions of complex terrain, coastal gradients, or low reference variability. Corresponding error maps are available in [documentation/figures/nrmse](documentation/figures/nrmse/).
+- Across the Bukovsky regions, ORRC v1.0 generally remains close to CaSR v3.2, with most variables clustered near unit normalized standard deviation and high correlations. Agreement is strongest for temperature, pressure, radiation, and specific humidity, while precipitation and wind speed show somewhat larger regional spread. The largest mismatches occur for relative humidity, especially minimum relative humidity, with broader regional scatter and higher errors. Corresponding Taylor diagrams are available in [documentation/figures/taylor_diagrams](documentation/figures/taylor_diagrams).
+- The bias-adjustment step substantially improves the magnitude and the spatial patterns of bias relative to CaSR v3.2. ORRC-a v1.0 should therefore be prioritized for applications requiring comparison with the historical CaSR v3.2 baseline. Corresponding bias maps are available in [documentation/figures/bias](documentation/figures/bias).
 
 ## Data availability and download
 ORRC v1.0 and ORRC-a v1.0 will be made available through the [Ouranos THREDDS Data Server](https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/birdhouse/ouranos/catalog.html).

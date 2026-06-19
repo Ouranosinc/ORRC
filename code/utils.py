@@ -106,10 +106,17 @@ def classify_ncfiles(ncfiles : list) -> dict:
         The dictionary containing the classification of the netCDF files.
     """
     grid_spec = {}
+
+    # treat CaPA_6h and CaPA_coarse as the same product
+    product_aliases = {
+        "CaPA_6h": "CaPA_coarse",
+        "CaPA_coarse": "CaPA_coarse",
+    }
     
     for nc_path in ncfiles:
         with xr.open_dataset(nc_path, decode_timedelta=False) as ds:
             product = ds.attrs['product']
+            product = product_aliases.get(product, product)
             #eccc_grd = ds['lon'].attrs['eccc_grid_definition'].replace(' ','_').replace(':','').replace(',','')
             dims = [d for d in ds.dims if d != 'time']
             if not np.all([len(ds[d].shape)==1 for d in dims]):
@@ -156,7 +163,7 @@ def add_time(nc : Path, spec : dict) -> xr.Dataset:
 
     ds = xr.open_dataset(nc, decode_timedelta=False)
 
-    if spec['product'].lower() == 'capa_coarse':
+    if spec['product'].lower() in ['capa_coarse', 'capa_24h']:
         time_values = np.array([0], dtype='int32')        # just [0]
     elif spec['product'].lower() == 'rdps':
         time_values = np.arange(6, 13, 1, dtype='int32')  # [6..12]
@@ -327,7 +334,7 @@ def _add_history_attr(nc_file : nc4.Dataset, message : str) -> None:
         setattr(nc_file, 'history', history_message)
 
 
-def check_files(RDPS_directory : str, CaPA_directory : str, start_date : datetime) -> Tuple[list, list, list, list]:
+def check_files(RDPS_directory : str, CaPA6h_directory : str, CaPA24h_directory : str, start_date : datetime) -> Tuple[list, list, list, list, list, list]:
     """
     Checks if the required RDPS and CaPA files exist and have dimensions.
 
@@ -335,8 +342,10 @@ def check_files(RDPS_directory : str, CaPA_directory : str, start_date : datetim
     ----------
     RDPS_directory : str
         path of the rdps files.
-    CaPA_directory : str
-        path of the capa files.
+    CaPA6h_directory : str
+        path of the capa 6h files.
+    CaPA24h_directory : str
+        path of the capa 24h files.
     start_date : str
         start date in the format of YYYYMMDD
 
@@ -344,12 +353,16 @@ def check_files(RDPS_directory : str, CaPA_directory : str, start_date : datetim
     -------
     valid_RDPS_files : list
         list of the valid RDPS file paths (files that exist and have dimensions).
-    valid_CaPA_files : list
-        list of the valid CaPA file paths (files that exist and have dimensions).
+    valid_CaPA6h_files : list
+        list of the valid CaPA 6h file paths (files that exist and have dimensions).
+    valid_CaP24h_files : list
+        list of the valid CaPA 24h file paths (files that exist and have dimensions).
     missing_RDPS_files : list
         list of the missing RDPS file paths (either the file does not exist or it has no dimensions).
-    missing_CaPA_files : list
-        list of the missing CaPA file paths (either the file does not exist or it has no dimensions).
+    missing_CaPA6h_files : list
+        list of the missing CaPA 6h file paths (either the file does not exist or it has no dimensions).
+    missing_CaP24h_files : list
+        list of the missing CaPA 24h file paths (either the file does not exist or it has no dimensions).
 
     """
  
@@ -362,10 +375,12 @@ def check_files(RDPS_directory : str, CaPA_directory : str, start_date : datetim
     
     # create empty list to store the RDPS, CaPA and the name of files
     valid_RDPS_files  = []
-    valid_CaPA_files  = []
+    valid_CaPA6h_files  = []
+    valid_CaP24h_files = []
     namefiledict    = {}
     missing_RDPS_files = []
-    missing_CaPA_files = []
+    missing_CaPA6h_files = []
+    missing_CaP24h_files = []
     
     # list of needed files from RDPS and CaPA
     namefiledict['RDPS'] = [os.path.join(RDPS_directory, start_date_string + "06.nc"),
@@ -373,10 +388,12 @@ def check_files(RDPS_directory : str, CaPA_directory : str, start_date : datetim
                             os.path.join(RDPS_directory, start_date_string + "18.nc"),
                             os.path.join(RDPS_directory, next_date_string  + "00.nc")]
     
-    namefiledict['CaPA'] = [os.path.join(CaPA_directory, start_date_string + "18.nc"),
-                            os.path.join(CaPA_directory, next_date_string + "00.nc"),
-                            os.path.join(CaPA_directory, next_date_string + "06.nc"),
-                            os.path.join(CaPA_directory, next_date_string + "12.nc")]
+    namefiledict['CaPA6h'] = [os.path.join(CaPA6h_directory, start_date_string + "18.nc"),
+                             os.path.join(CaPA6h_directory, next_date_string + "00.nc"),
+                             os.path.join(CaPA6h_directory, next_date_string + "06.nc"),
+                             os.path.join(CaPA6h_directory, next_date_string + "12.nc")]
+    
+    namefiledict['CaPA24h'] = [os.path.join(CaPA24h_directory, next_date_string + "12.nc")]    
             
     # Check if all the required RDPS files are present
     for file in namefiledict['RDPS']: 
@@ -398,26 +415,43 @@ def check_files(RDPS_directory : str, CaPA_directory : str, start_date : datetim
             logging.error(f"Problem opening RDPS file: {file}, Error: {e}")
             
     
-    # Check if all CaPA files are present
-    for file in namefiledict['CaPA']: 
+    # Check if all CaPA 6h files are present
+    for file in namefiledict['CaPA6h']: 
         try:
             with nc4.Dataset(file, 'r') as dataset:
                 if not dataset.dimensions:
-                    missing_CaPA_files.append(file)
-                    logging.error(f"CaPA file '{file}' exists but it has no dimensions.")
+                    missing_CaPA6h_files.append(file)
+                    logging.error(f"CaPA 6h file '{file}' exists but it has no dimensions.")
                 else:
-                    valid_CaPA_files.append(file)  
-                    # logging.info(f"CaPA file {file} is present --> OK")
+                    valid_CaPA6h_files.append(file)  
 
         except FileNotFoundError:
-            missing_CaPA_files.append(file)
-            logging.error(f"CaPA file not found: {file}")
+            missing_CaPA6h_files.append(file)
+            logging.error(f"CaPA 6h file not found: {file}")
             
         except OSError as e:
-            missing_CaPA_files.append(file)
-            logging.error(f"Problem opening CaPA file: {file}, Error: {e}")
+            missing_CaPA6h_files.append(file)
+            logging.error(f"Problem opening CaPA 6h file: {file}, Error: {e}")
+    
+    # Check if all CaPA 24h files are present
+    for file in namefiledict['CaPA24h']: 
+        try:
+            with nc4.Dataset(file, 'r') as dataset:
+                if not dataset.dimensions:
+                    missing_CaP24h_files.append(file)
+                    logging.error(f"CaPA 24h file '{file}' exists but it has no dimensions.")
+                else:
+                    valid_CaP24h_files.append(file)  
 
-    return valid_RDPS_files, valid_CaPA_files, missing_RDPS_files, missing_CaPA_files
+        except FileNotFoundError:
+            missing_CaP24h_files.append(file)
+            logging.error(f"CaPA 24h file not found: {file}")
+            
+        except OSError as e:
+            missing_CaP24h_files.append(file)
+            logging.error(f"Problem opening CaPA 24h file: {file}, Error: {e}")
+
+    return valid_RDPS_files, valid_CaPA6h_files, valid_CaP24h_files, missing_RDPS_files, missing_CaPA6h_files, missing_CaP24h_files
 
 
 def create_file(missing_filepaths : list, complete_filepaths : list, coordinate_vars : list) -> None:
@@ -535,15 +569,17 @@ def create_file(missing_filepaths : list, complete_filepaths : list, coordinate_
             logging.info(f"Created new {product} file '{missing_file}' with the same variables from the complete file '{complete_filepaths[0]}' and filled with NaN.")
 
 
-def read_data(RDPS_directory : str, CaPA_directory : str, tgt_file : str, start_date : datetime) -> Tuple[list, list, nc4.Dataset, nc4.Dataset, dict]:
+def read_data(RDPS_directory : str, CaPA6h_directory : str, CaPA24h_directory : str, tgt_file : str, start_date : datetime) -> Tuple[list, list, list, nc4.Dataset, nc4.Dataset, dict]:
     """
     Reads in the input netCDF files
     Parameters
     ----------
     RDPS_directory : str
         path of the rdps files.
-    CaPA_directory : str
-        path of the capa files.
+    CaPA6h_directory : str
+        path of the capa 6H files.
+    CaPA24h_directory : str
+        path of the capa 24h files.
     tgt_file : str
         name of the target file used for regridding and as template.
     start_date : str
@@ -553,8 +589,10 @@ def read_data(RDPS_directory : str, CaPA_directory : str, tgt_file : str, start_
     -------
     RDPS_datasets : list
         list of the rdps files read as netcdf.
-    CaPA_datasets : list
-        list of the capa files read as netcdf.
+    CaPA6h_datasets : list
+        list of the capa 6h files read as netcdf.
+    CaPA24h_datasets : list
+        list of the capa 24h files read as netcdf.
     tgt_ds : netcdf
         netcdf object with the information of the target file used for regridding and as template.
     namefile: dict
@@ -568,21 +606,24 @@ def read_data(RDPS_directory : str, CaPA_directory : str, tgt_file : str, start_
     next_date         = start_date + timedelta(days = 1)
     next_date_string  = next_date.strftime("%Y%m%d")
     
-    # create empty list to store the RDPS, CaPA and the name of files
+    # create empty list to store the RDPS, CaPA 6h and 24h and the name of files
     RDPS_datasets  = []
     namefile    = {}
-    CaPA_datasets  = []
+    CaPA6h_datasets  = []
+    CaPA24h_datasets = []
     
-    # list of needed files from RDPS and CaPA
+    # list of needed files from RDPS, CaPA 6h and CaPA 24h
     namefile['RDPS'] = [join(RDPS_directory, start_date_string + "06.nc"),
                         join(RDPS_directory, start_date_string + "12.nc"),
                         join(RDPS_directory, start_date_string + "18.nc"),
                         join(RDPS_directory, next_date_string  + "00.nc")]
     
-    namefile['CaPA'] = [join(CaPA_directory, start_date_string + "18.nc"),
-                        join(CaPA_directory, next_date_string + "00.nc"),
-                        join(CaPA_directory, next_date_string + "06.nc"),
-                        join(CaPA_directory, next_date_string + "12.nc")]
+    namefile['CaPA6h'] = [join(CaPA6h_directory, start_date_string + "18.nc"),
+                         join(CaPA6h_directory, next_date_string + "00.nc"),
+                         join(CaPA6h_directory, next_date_string + "06.nc"),
+                         join(CaPA6h_directory, next_date_string + "12.nc")]
+    
+    namefile['CaPA24h'] = [join(CaPA24h_directory, next_date_string + "12.nc")]
             
     # Check if all RDPS files are present
     for file in namefile['RDPS']: 
@@ -593,19 +634,26 @@ def read_data(RDPS_directory : str, CaPA_directory : str, tgt_file : str, start_
             sys.stderr.write(f"PROBLEM opening (or non existing) RDPS file: {file}")
         
     
-    # Check if all CaPA files are present
-    for file in namefile['CaPA']: 
+    # Check if all CaPA 6h files are present
+    for file in namefile['CaPA6h']: 
         try:
-            CaPA_datasets.append(nc4.Dataset(file, 'r'))    
+            CaPA6h_datasets.append(nc4.Dataset(file, 'r'))    
             # logging.info(f"CaPA file {file} is present --> OK")
         except:
-            sys.stderr.write(f"PROBLEM opening (or non existing) CaPA file: {file}")
+            sys.stderr.write(f"PROBLEM opening (or non existing) CaPA 6h file: {file}")
+    
+    # Check if all CaPA 24h files are present
+    for file in namefile['CaPA24h']: 
+        try:
+            CaPA24h_datasets.append(nc4.Dataset(file, 'r'))    
+        except:
+            sys.stderr.write(f"PROBLEM opening (or non existing) CaPA 24h file: {file}")
 
     # read the target file 
     tgt_ds = nc4.Dataset(tgt_file, 'r')
 
 
-    return RDPS_datasets, CaPA_datasets, tgt_ds, namefile
+    return RDPS_datasets, CaPA6h_datasets, CaPA24h_datasets, tgt_ds, namefile
 
 
 def check_time(RDPS_files : list, required_time : list, nameprodfile : dict) -> Tuple[list, list]:
@@ -687,8 +735,20 @@ def create_netCDF(tgt_ds : nc4.Dataset, outfile_nc : str) -> nc4.Dataset:
         
     # set file-level attributes
     new_attrs = {
-        'product': 'RDPS_CaPA',
-        'Remarks' : "Variable names are following the convention <Product>_<Type:A=Analysis,P=Prediction>_<ECCC name>_<Level/Tile/Category>. Variables with level \'10000\' are at surface level. The height [m] of variables with level \'0XXXX\' needs to be inferrred using the corresponding fields of geopotential height (GZ_0XXXX-GZ_10000). The variables UUC, VVC, UVC, and WDC are not modelled but inferred from UU and VV for convenience of the users. Precipitation (PR) is reported as 6-hr accumulations for CaPA_fine and CaPA_coarse. Precipitation (PR) are accumulations since beginning of the forecast for GEPS, GDPS, REPS, RDPS, HRDPS, and CaLDAS. The re-analysis product CaSR (_v1, _v2, v2.1, v3.1) contains two variables for precipitation: \'P_PR_SFC\' is the model precipitation (trial field used by CaPA) and \'A_PR_SFC\' is precipitations adjusted with CaPA 24h precipitation. Please be aware that the baseflow \'O1\' of the current version of WCPS is not reliable during the spring melt period. ORRC is not a product available directly on CaSPar. It is created by combining RDPS and CaPA outputs."
+        "product": "RDPS_CaPA",
+        "Remarks": (
+            "Variable names are following the convention "
+            "<Product>_<Type:A=Analysis,P=Prediction>_<ECCC name>_<Level/Tile/Category>. "
+            "Variables with level '10000' are at surface level. The height [m] of variables "
+            "with level '0XXXX' needs to be inferred using the corresponding fields of "
+            "geopotential height (GZ_0XXXX-GZ_10000). The variables UUC, VVC, UVC, and WDC "
+            "are not modelled but inferred from UU and VV for convenience of the users. "
+            "Precipitation (PR) is reported as 6-hr accumulations for CaPA_fine and CaPA_coarse products, and as 24-hr accumulations for CaPA_24h."
+            "Precipitation (PR) are accumulations since beginning of the forecast for GEPS, "
+            "GDPS, REPS, RDPS, HRDPS, and CaLDAS. The re-analysis product CaSR (_v1, _v2, v2.1, v3.1) "
+            "contains two variables for precipitation: 'P_PR_SFC' is the model precipitation "
+            "and 'A_PR_SFC' is precipitations adjusted with CaPA 6h and 24h precipitation."
+        ),
     }
     ncid.setncatts(new_attrs)
     
@@ -760,7 +820,7 @@ def netCDF_variable_assignment(ncid : nc4.Dataset, outfile_nc : str, var_list : 
         ncid[latlon].setncatts(tgt_ds[latlon].__dict__) 
         ncid[latlon][:] = tgt_ds[latlon][:]
 
-    # create all other variables (except precipitation analysis)
+    # create all other variables (except precipitation forecast & analysis)
     # loop through each variable name from input RDPS_files
     for var in RDPS_datasets[0].variables:
         if var in var_list:       
@@ -831,7 +891,7 @@ def _variable_data(ncid : nc4.Dataset, key_var : str, RDPS_datasets : list, star
     ncvar.setncatts(var_attrs_clean)
 
        
-def do_A_PR_SFC(ncid : nc4.Dataset, RDPS_datasets : list, CaPA_datasets : list, tgt_ds : nc4.Dataset) -> None:
+def do_A_PR_SFC(ncid : nc4.Dataset, RDPS_datasets : list, CaPA6h_datasets : list, CaPA24h_datasets : list, tgt_ds : nc4.Dataset) -> None:
     """
     Create the "Analysis: Quantity of precipitation" variable in the output netCDF file
     Adjusts the hourly RDPS values using a scaling factor based on the ratio of CaPA to RDPS totals
@@ -843,8 +903,10 @@ def do_A_PR_SFC(ncid : nc4.Dataset, RDPS_datasets : list, CaPA_datasets : list, 
         identifiant of the netcdf file.
     RDPS_datasets : list
         list of RDPS netcdf datasets.
-    CaPA_datasets : list
-        list of CaPA netcdf datasets.
+    CaPA6h_datasets : list
+        list of CaPA 6h netcdf datasets.
+    CaPA24h_datasets : list
+        list of CaPA 24h netcdf datasets.
     tgt_ds : netcdf dataset
         CaSR file used as a template for the output file. It is used to get the attributes of the variables.
 
@@ -860,43 +922,94 @@ def do_A_PR_SFC(ncid : nc4.Dataset, RDPS_datasets : list, CaPA_datasets : list, 
         rdps_data.append(da.values.astype("float32", copy=False))
 
     # read CaPA 6h accumulated precipitation
-    number_of_hours = 6
-    number_of_files = len(CaPA_datasets)
+    CaPA6h_number_of_hours = 6
+    number_of_files = len(CaPA6h_datasets)
 
-    capa_data = []
+    capa6h_data = []
     for n in range(number_of_files):
-        capa_pr = CaPA_datasets[n].variables['CaPA_coarse_A_PR_SFC'][:][0]
-        capa_data.append(capa_pr)
+        capa6h_pr = CaPA6h_datasets[n].variables['CaPA_coarse_A_PR_SFC'][:][0]
+        capa6h_data.append(capa6h_pr)
 
     # set empty array for the hourly precipitation data with the same shape as the RDPS data
     precip_data_hourly = [
-        np.empty_like(item[:number_of_hours])  # (6, rlat, rlon)
+        np.empty_like(item[:CaPA6h_number_of_hours])  # (6, rlat, rlon)
         for item in rdps_data
     ]
 
     # convert cumulative RDPS fields to hourly increments
     for n in range(number_of_files):
-        for i in range(number_of_hours):
+        for i in range(CaPA6h_number_of_hours):
             precip_data_hourly[n][i] = rdps_data[n][i + 1] - rdps_data[n][i]
 
-    # get RDPS total precip for the same 6h window as CaPA by summing the hourly increments
-    rdps_precip_daily_sums = []
+    # get RDPS total precip for the same 6h window as CaPA 6h by summing the hourly increments
+    rdps_precip_6h_sums = []
     for item in precip_data_hourly:
-        rdps_precip_daily_sums.append(np.sum(item, axis = 0))
+        rdps_precip_6h_sums.append(np.sum(item, axis = 0)) # if one value is NaN, the sum will be NaN
 
-    # scale RDPS hourly totals so their six-hour sum matches CaPA
+    # apply the first adjustment using CaPA 6h accumulated precipitation
     for n in range(number_of_files):
-        scale       = capa_data[n]/rdps_precip_daily_sums[n]
-        capa_hr_cst = capa_data[n]/number_of_hours
-        
-        for t in range(number_of_hours):
-            # if RDPS forecasted no precip, spread CaPA’s 6h total evenly over the six hours
-            # if RDPS forecasted precip, scale the RDPS hourly total by the ratio of CaPAtotal / RDPStotal
-            precip_data_hourly[n][t] = np.where(rdps_precip_daily_sums[n]>1e-6, scale*precip_data_hourly[n][t], capa_hr_cst)    
+        valid_rdps_6h = (np.isfinite(rdps_precip_6h_sums[n]) & (rdps_precip_6h_sums[n] > 1e-6))
+        valid_capa6h = np.isfinite(capa6h_data[n])  # (rlat, rlon)
+
+        scale_6h = capa6h_data[n] / rdps_precip_6h_sums[n]
+        capa6h_hr_cst = capa6h_data[n] / CaPA6h_number_of_hours
+
+        for t in range(CaPA6h_number_of_hours):
+            rdps_hour = precip_data_hourly[n][t]
+
+            precip_data_hourly[n][t] = np.where(
+                valid_capa6h,    
+                # if CaPA 6h is valid and RDPS 6-hour sum is valid, then scale the RDPS hourly total by the ratio of CaPAtotal / RDPStotal
+                # if CaPA 6h is valid but RDPS 6-hour sum is missing/near zero, then spread CaPA’s 6h total evenly over the six hours
+                np.where(                   
+                    valid_rdps_6h,
+                    scale_6h * rdps_hour,   # CaPA6h valid + RDPS valid 
+                    capa6h_hr_cst           # CaPA6h valid + RDPS missing/near zero 
+                ),
+                # if CaPA 6h is missing but RDPS 6-hour sum is valid, keep the RDPS hourly value (no 6hr adjustment)
+                # if CaPA 6h is missing and RDPS 6-hour sum is missing/near zero, then set to NaN 
+                np.where(
+                    valid_rdps_6h,
+                    rdps_hour,             # CaPA6h missing + RDPS valid 
+                    np.nan                 # CaPA6h missing + RDPS missing/near zero
+                )
+            )
                
     precip_data = np.array(precip_data_hourly)
     precip_data = np.concatenate(precip_data, axis = 0)
-    
+
+    # second adjustment using CaPA 24h accumulated precipitation 
+    CaPA24h_number_of_hours = 24
+
+    # read CaPA 24h accumulated precipitation
+    assert len(CaPA24h_datasets) == 1, "There should be exactly one CaPA 24h dataset."
+    capa24h_data = CaPA24h_datasets[0].variables["CaPA_coarse_A_PR_SFC"][:][0]
+
+    # valid CaPA-24h mask
+    valid_capa24h = np.isfinite(capa24h_data)
+
+    # 24h total of the already adjusted hourly precipitation
+    precip_24h_sum = np.sum(precip_data, axis=0)
+
+    # valid 24h precip mask (after the first adjustment)
+    valid_precip_24h = (np.isfinite(precip_24h_sum) & (precip_24h_sum > 1e-6))
+
+    scale_24h = capa24h_data / precip_24h_sum
+    capa24h_hr_cst = capa24h_data / CaPA24h_number_of_hours
+
+    precip_data = np.where(
+        # if CaPA 24h is valid and precip 24h sum is valid, then scale the already adjusted hourly total by the ratio of CaPAtotal / precip24htotal
+        # if CaPA 24h is valid but precip 24h sum is missing/near zero, then spread CaPA’s 24h total evenly over the 24 hours
+        valid_capa24h[None, :, :],
+        np.where(
+            valid_precip_24h[None, :, :],
+            scale_24h[None, :, :] * precip_data,
+            capa24h_hr_cst[None, :, :]
+        ),
+        # if CaPA 24h is missing but precip 24h sum is valid, keep the already adjusted hourly value (no further adjustment)
+        precip_data
+    )
+
     # create precipitation variable
     ncid.createVariable('RDPS_CaPA_A_PR_SFC', 'f4', ('time', 'rlat', 'rlon'))
     
@@ -908,8 +1021,62 @@ def do_A_PR_SFC(ncid : nc4.Dataset, RDPS_datasets : list, CaPA_datasets : list, 
     
     return(precip_data)
 
+   
+def do_P_PR_SFC(ncid : nc4.Dataset, RDPS_datasets : list, tgt_ds : nc4.Dataset) -> None:
+    """
+    Create the "Forecast: Quantity of precipitation" variable in the output netCDF file
+    Creates hourly model precipitation data from accumulated RDPS fields.
 
-def create_orrc(RDPS_regridded_dir : str, CaPA_regridded_dir : str, tgt_file : str, start_date : str, outfile_nc : str, var_list : list, required_time_window : list, analysis_bool : bool) -> None:
+    Parameters
+    ----------
+    ncid : nc id
+        identifiant of the netcdf file.
+    RDPS_datasets : list
+        list of RDPS netcdf datasets.
+    tgt_ds : netcdf dataset
+        CaSR file used as a template for the output file. It is used to get the attributes of the variables.
+
+    Returns
+    -------
+    None.
+    """
+
+    # read RDPS precipitation and forward fill missing hours
+    rdps_data = []
+    for f in RDPS_datasets:
+        da = xr.DataArray(f.variables["RDPS_P_PR_SFC"][:], dims=("time", "rlat", "rlon")).ffill("time")                       
+        rdps_data.append(da.values.astype("float32", copy=False))
+
+    CaPA6h_number_of_hours = 6
+
+    # set empty array for the hourly precipitation data with the same shape as the RDPS data
+    precip_data_hourly = [
+        np.empty_like(item[:CaPA6h_number_of_hours])  # (6, rlat, rlon)
+        for item in rdps_data
+    ]
+
+    # convert cumulative RDPS fields to hourly increments
+    number_of_files = len(RDPS_datasets)
+    for n in range(number_of_files):
+        for i in range(CaPA6h_number_of_hours):
+            precip_data_hourly[n][i] = rdps_data[n][i + 1] - rdps_data[n][i]
+
+    precip_data = np.array(precip_data_hourly)
+    precip_data = np.concatenate(precip_data, axis = 0)
+
+    # create prmod variable
+    ncid.createVariable('RDPS_CaPA_P_PR_SFC', 'f4', ('time', 'rlat', 'rlon'))
+    
+    name_product=tgt_ds.__dict__['product']  
+    name_product_PR=str(name_product)+'_P_PR0_SFC'
+       
+    ncid['RDPS_CaPA_P_PR_SFC'].setncatts(tgt_ds[name_product_PR].__dict__) 
+    ncid['RDPS_CaPA_P_PR_SFC'][:] = precip_data
+    
+    return(precip_data)
+
+
+def create_orrc(RDPS_regridded_dir : str, CaPA6h_regridded_dir : str, CaPA24h_regridded_dir : str, tgt_file : str, start_date : str, outfile_nc : str, var_list : list, required_time_window : list, analysis_bool : bool) -> None:
     """
     Creates a new netCDF file for output.
 
@@ -917,8 +1084,10 @@ def create_orrc(RDPS_regridded_dir : str, CaPA_regridded_dir : str, tgt_file : s
     ----------
     RDPS_regridded_dir : str
         path of the regridded rdps files.
-    CaPA_regridded_dir : str
-        path of the regridded capa files.
+    CaPA6h_regridded_dir : str
+        path of the regridded capa 6h files.
+    CaPA24h_regridded_dir : str 
+        path of the regridded capa 24h files.
     tgt_file : str
         name of the target file used for regridding and as template.
     start_date : str
@@ -936,13 +1105,13 @@ def create_orrc(RDPS_regridded_dir : str, CaPA_regridded_dir : str, tgt_file : s
     -------
     None.
     """
-    RDPS_datasets, CaPA_datasets, tgt_ds, namefile = read_data(RDPS_regridded_dir, CaPA_regridded_dir, tgt_file, start_date)
+    RDPS_datasets, CaPA6h_datasets, CaPA24h_datasets, tgt_ds, namefile = read_data(RDPS_regridded_dir, CaPA6h_regridded_dir, CaPA24h_regridded_dir, tgt_file, start_date)
 
     # check to see if input RDPS files contain the required 7 hours and RDPS files contain the same forecast horizons
     # and get the start and end index of the required time window
     start_index, end_index = check_time(RDPS_datasets, required_time_window, namefile)
 
-    # netCDF will be created based on the CaSR v3.1 grid 
+    # netCDF will be created based on the CaSR v32 grid 
     ncid = create_netCDF(tgt_ds, outfile_nc)
 
     # create variables in output netCDF file
@@ -950,7 +1119,10 @@ def create_orrc(RDPS_regridded_dir : str, CaPA_regridded_dir : str, tgt_file : s
 
     if analysis_bool:
         # create "Analysis: Quantity of precipitation" variable
-        do_A_PR_SFC(ncid, RDPS_datasets, CaPA_datasets, tgt_ds)
+        do_A_PR_SFC(ncid, RDPS_datasets, CaPA6h_datasets, CaPA24h_datasets, tgt_ds)
+    
+    # create hourly "Forecast: Quantity of precipitation" (prmod) variable
+    do_P_PR_SFC(ncid, RDPS_datasets, tgt_ds)
 
     ncid.close()
 

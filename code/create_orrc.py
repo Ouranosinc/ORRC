@@ -42,27 +42,33 @@ def main(version, processed_dir, required_time_window, var_list, tgt_file, loggi
             
     RDPS_regridded_dir = processed_dir.joinpath(f"RDPS_regridded", "NAM") 
     RDPS_regridded_dir.mkdir(parents=True, exist_ok=True)
-    CaPA_regridded_dir = processed_dir.joinpath(f"CaPA_coarse_regridded", "NAM")
-    CaPA_regridded_dir.mkdir(parents=True, exist_ok=True)
+    CaPA6h_regridded_dir = processed_dir.joinpath(f"CaPA_coarse_regridded", "NAM")
+    CaPA6h_regridded_dir.mkdir(parents=True, exist_ok=True)
+    CaPA24h_regridded_dir = processed_dir.joinpath(f"CaPA_24h_regridded", "NAM")
+    CaPA24h_regridded_dir.mkdir(parents=True, exist_ok=True)
     
     RDPS_files = sorted(list(RDPS_regridded_dir.glob('*.nc'))) 
-    CaPA_files = sorted(list(CaPA_regridded_dir.glob('*.nc')))
+    CaPA6h_files = sorted(list(CaPA6h_regridded_dir.glob('*.nc')))
+    CaPA24h_files = sorted(list(CaPA24h_regridded_dir.glob('*.nc')))
 
     # create output netCDF file for ORRC
     output_dir = processed_dir.joinpath('CaSR_mimic/NAM') 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    if RDPS_files and CaPA_files:
+    if RDPS_files and CaPA6h_files and CaPA24h_files:
         first_date_RDPS = RDPS_files[0].stem[0:8]
         last_date_RDPS = RDPS_files[-1].stem[0:8]
 
-        first_date_CaPA = CaPA_files[0].stem[0:8]
-        last_date_CaPA = CaPA_files[-1].stem[0:8]
+        first_date_CaPA6h = CaPA6h_files[0].stem[0:8]
+        last_date_CaPA6h = CaPA6h_files[-1].stem[0:8]
 
-        # find the common date range between RDPS and CaPA
-        first_date = max(int(first_date_RDPS), int(first_date_CaPA))
-        last_date = min(int(last_date_RDPS), int(last_date_CaPA))
-        
+        first_date_CaPA24h = CaPA24h_files[0].stem[0:8]
+        last_date_CaPA24h = CaPA24h_files[-1].stem[0:8]
+
+        # find the common date range between RDPS, CaPA_coarse and CaPA_24h
+        first_date = max(int(first_date_RDPS), int(first_date_CaPA6h), int(first_date_CaPA24h))
+        last_date = min(int(last_date_RDPS), int(last_date_CaPA6h), int(last_date_CaPA24h))
+
         start_date = date(
             int(str(first_date)[0:4]),
             int(str(first_date)[4:6]),
@@ -75,7 +81,7 @@ def main(version, processed_dir, required_time_window, var_list, tgt_file, loggi
         )
 
         # end date minus 1 day because RDPS files are at 06, 12, 18, 00 of the same day
-        # and CaPA files are at 18 of the same day and at 00, 06, 12 of the next day
+        # and CaPA 6h files are at 18 of the same day and at 00, 06, 12 of the next day
         end_date = end_date - timedelta(days = 1)
         last_date = end_date.strftime('%Y%m%d') 
 
@@ -115,7 +121,8 @@ def main(version, processed_dir, required_time_window, var_list, tgt_file, loggi
                 else:
                     jobs.append((
                         RDPS_regridded_dir, 
-                        CaPA_regridded_dir, 
+                        CaPA6h_regridded_dir, 
+                        CaPA24h_regridded_dir,
                         tgt_file, 
                         day_date, 
                         outfile_nc, 
@@ -178,7 +185,11 @@ if __name__ == '__main__':
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)   
 
-    var_list = [var_info['name'] for var_info in config['Variables']['RDPS']]
+    var_list = [
+        var_info["name"]
+        for var_info in config["Variables"]["RDPS"]
+        if var_info["name"] != "RDPS_P_PR_SFC"  # exclude it from copying directly since hourly values will be created
+    ]
     required_time_window = config['Time']['required_rdps_time_window']
     required_time_window = [int(i) for i in required_time_window] 
 

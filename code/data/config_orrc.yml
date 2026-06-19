@@ -106,6 +106,12 @@ Variables:
         long_name: "Analysis: Quantity of precipitation"
         units: "m"
         grid_mapping: "rotated_pole"
+  CaPA_24h:
+    - name: CaPA_coarse_A_PR_SFC
+      attributes:
+        long_name: "Analysis: Quantity of precipitation"
+        units: "m"
+        grid_mapping: "rotated_pole"
 
 
 Coordinates: 
@@ -145,6 +151,7 @@ Target_variables:
     - winddir
     - sfcWind
     - pr
+    - prmod
   Daily_aggregates:
     - tasmin
     - tasmax
