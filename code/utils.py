@@ -106,10 +106,17 @@ def classify_ncfiles(ncfiles : list) -> dict:
         The dictionary containing the classification of the netCDF files.
     """
     grid_spec = {}
+
+    # treat CaPA_6h and CaPA_coarse as the same product
+    product_aliases = {
+        "CaPA_6h": "CaPA_coarse",
+        "CaPA_coarse": "CaPA_coarse",
+    }
     
     for nc_path in ncfiles:
         with xr.open_dataset(nc_path, decode_timedelta=False) as ds:
             product = ds.attrs['product']
+            product = product_aliases.get(product, product)
             #eccc_grd = ds['lon'].attrs['eccc_grid_definition'].replace(' ','_').replace(':','').replace(',','')
             dims = [d for d in ds.dims if d != 'time']
             if not np.all([len(ds[d].shape)==1 for d in dims]):

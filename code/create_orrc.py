@@ -52,7 +52,7 @@ def main(version, processed_dir, required_time_window, var_list, tgt_file, loggi
     CaPA24h_files = sorted(list(CaPA24h_regridded_dir.glob('*.nc')))
 
     # create output netCDF file for ORRC
-    output_dir = processed_dir.joinpath('RDRS_mimic/NAM') 
+    output_dir = processed_dir.joinpath('CaSR_mimic/NAM') 
     output_dir.mkdir(parents=True, exist_ok=True)
 
     if RDPS_files and CaPA6h_files and CaPA24h_files:
@@ -185,7 +185,11 @@ if __name__ == '__main__':
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)   
 
-    var_list = [var_info['name'] for var_info in config['Variables']['RDPS']]
+    var_list = [
+        var_info["name"]
+        for var_info in config["Variables"]["RDPS"]
+        if var_info["name"] != "RDPS_P_PR_SFC"  # exclude it from copying directly since hourly values will be created
+    ]
     required_time_window = config['Time']['required_rdps_time_window']
     required_time_window = [int(i) for i in required_time_window] 
 

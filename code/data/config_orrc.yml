@@ -50,6 +50,11 @@ Variables:
         long_name: "Forecast: Sea level pressure"
         units: "mb"
         grid_mapping: "rotated_pole"
+    - name: RDPS_P_PR_SFC
+      attributes:
+        long_name: "Forecast: Quantity of precipitation"
+        units: "m"
+        grid_mapping: "rotated_pole"
     - name: RDPS_P_RN_SFC
       attributes:
         long_name: "Forecast: Rain (QPF)"
@@ -96,6 +101,12 @@ Variables:
         units: "deg"
         grid_mapping: "rotated_pole"
   CaPA_coarse:
+    - name: CaPA_coarse_A_PR_SFC
+      attributes:
+        long_name: "Analysis: Quantity of precipitation"
+        units: "m"
+        grid_mapping: "rotated_pole"
+  CaPA_24h:
     - name: CaPA_coarse_A_PR_SFC
       attributes:
         long_name: "Analysis: Quantity of precipitation"
