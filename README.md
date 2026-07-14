@@ -103,5 +103,5 @@ We evaluated ORRC against CaSR v3.2 over the overlapping 2020–2024 period for 
 - The bias-adjustment step substantially improves the magnitude and the spatial patterns of bias relative to CaSR v3.2. ORRC-a v1.0 should therefore be prioritized for applications requiring comparison with the historical CaSR v3.2 baseline. Corresponding bias maps are available in [documentation/figures/bias](documentation/figures/bias).
 
 ## Data availability and download
-ORRC v1.0 and ORRC-a v1.0 will be made available through the [Ouranos THREDDS Data Server](https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/birdhouse/ouranos/catalog.html).
+ORRC v1.0 and ORRC-a v1.0 will be made available through the [Ouranos THREDDS Data Server](https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/birdhouse/ouranos/ORRC/catalog.html).
 
