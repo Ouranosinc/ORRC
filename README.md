@@ -1,5 +1,5 @@
 # Ouranos Reconstruction – RDPS-CaPA (ORRC) v1.0 / Reconstruction Ouranos – RDPS‑CAPA (RORC) v1.0
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21381480.svg)](https://doi.org/10.5281/zenodo.21381480)
+ORRC v1.0: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21381480.svg)](https://doi.org/10.5281/zenodo.21381480)
 
 ## Overview
 Ouranos Reconstruction – RDPS-CaPA (ORRC) version 1.0 is a dataset designed to approximate the [Canadian Surface Reanalysis (CaSR)](https://hpfx.collab.science.gc.ca/~scar700/rcas-casr/) and provide continuity beyond the CaSR period. It is produced from the [Regional Deterministic Prediction System (RDPS)](https://eccc-msc.github.io/open-data/msc-data/nwp_rdps/readme_rdps_en/), with precipitation fields adjusted by blending RDPS with the [Regional Deterministic Precipitation Analysis (RDPA)](https://eccc-msc.github.io/open-data/msc-data/nwp_rdpa/readme_rdpa_en/). The latter will be referred to as the Canadian Precipitation Analysis (CaPA) hereafter.
