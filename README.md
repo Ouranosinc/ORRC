@@ -6,6 +6,12 @@ ORRC v1.0 provides hourly surface and near-surface meteorological fields at 0.09
 
 More details about ORRC v1.0 are available in the [documentation](documentation/ORRC_v10.pdf). 
 
+
+## Data availability and download
+ORRC v1.0 and ORRC-a v1.0 will be made available through the [Ouranos THREDDS Data Server](https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/birdhouse/ouranos/ORRC/catalog.html).
+
+
+## Workflow demonstration
 This repository contains a minimal example of the ORRC workflow using one week of test data. It includes the core processing steps extracted from the broader production pipeline:
 
 1. Download RDPS, CaPA-6h, CaPA-24h, and CaSR v3.2 test data from the Ouranos THREDDS Data Server.
@@ -101,7 +107,3 @@ We evaluated ORRC against CaSR v3.2 over the overlapping 2020–2024 period for 
 - Over the full spatial domain, normalized errors between ORRC and CaSR v3.2 are generally lower to moderate for temperature, dew-point temperature, radiation, and sea-level pressure. Larger and more spatially heterogeneous errors occur for relative humidity, precipitation, wind speed, and surface pressure, particularly in regions of complex terrain, coastal gradients, or low reference variability. Corresponding error maps are available in [documentation/figures/nrmse](documentation/figures/nrmse/).
 - Across the Bukovsky regions, ORRC v1.0 generally remains close to CaSR v3.2, with most variables clustered near unit normalized standard deviation and high correlations. Agreement is strongest for temperature, pressure, radiation, and specific humidity, while precipitation and wind speed show somewhat larger regional spread. The largest mismatches occur for relative humidity, especially minimum relative humidity, with broader regional scatter and higher errors. Corresponding Taylor diagrams are available in [documentation/figures/taylor_diagrams](documentation/figures/taylor_diagrams).
 - The bias-adjustment step substantially improves the magnitude and the spatial patterns of bias relative to CaSR v3.2. ORRC-a v1.0 should therefore be prioritized for applications requiring comparison with the historical CaSR v3.2 baseline. Corresponding bias maps are available in [documentation/figures/bias](documentation/figures/bias).
-
-## Data availability and download
-ORRC v1.0 and ORRC-a v1.0 will be made available through the [Ouranos THREDDS Data Server](https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/birdhouse/ouranos/ORRC/catalog.html).
-
