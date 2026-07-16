@@ -1,4 +1,6 @@
 # Ouranos Reconstruction – RDPS-CaPA (ORRC) v1.0 / Reconstruction Ouranos – RDPS‑CAPA (RORC) v1.0
+ORRC v1.0: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21381480.svg)](https://doi.org/10.5281/zenodo.21381480)
+
 ## Overview
 Ouranos Reconstruction – RDPS-CaPA (ORRC) version 1.0 is a dataset designed to approximate the [Canadian Surface Reanalysis (CaSR)](https://hpfx.collab.science.gc.ca/~scar700/rcas-casr/) and provide continuity beyond the CaSR period. It is produced from the [Regional Deterministic Prediction System (RDPS)](https://eccc-msc.github.io/open-data/msc-data/nwp_rdps/readme_rdps_en/), with precipitation fields adjusted by blending RDPS with the [Regional Deterministic Precipitation Analysis (RDPA)](https://eccc-msc.github.io/open-data/msc-data/nwp_rdpa/readme_rdpa_en/). The latter will be referred to as the Canadian Precipitation Analysis (CaPA) hereafter.
 
@@ -107,3 +109,9 @@ We evaluated ORRC against CaSR v3.2 over the overlapping 2020–2024 period for 
 - Over the full spatial domain, normalized errors between ORRC and CaSR v3.2 are generally lower to moderate for temperature, dew-point temperature, radiation, and sea-level pressure. Larger and more spatially heterogeneous errors occur for relative humidity, precipitation, wind speed, and surface pressure, particularly in regions of complex terrain, coastal gradients, or low reference variability. Corresponding error maps are available in [documentation/figures/nrmse](documentation/figures/nrmse/).
 - Across the Bukovsky regions, ORRC v1.0 generally remains close to CaSR v3.2, with most variables clustered near unit normalized standard deviation and high correlations. Agreement is strongest for temperature, pressure, radiation, and specific humidity, while precipitation and wind speed show somewhat larger regional spread. The largest mismatches occur for relative humidity, especially minimum relative humidity, with broader regional scatter and higher errors. Corresponding Taylor diagrams are available in [documentation/figures/taylor_diagrams](documentation/figures/taylor_diagrams).
 - The bias-adjustment step substantially improves the magnitude and the spatial patterns of bias relative to CaSR v3.2. ORRC-a v1.0 should therefore be prioritized for applications requiring comparison with the historical CaSR v3.2 baseline. Corresponding bias maps are available in [documentation/figures/bias](documentation/figures/bias).
+
+## Citation
+
+When using ORRC v1.0 or ORRC-a v1.0, please cite:
+
+Bese, A., & Logan, T. (2026). *Ouranos Reconstruction – RDPS-CaPA (ORRC) v1.0 / Reconstruction Ouranos – RDPS-CAPA (RORC) v1.0* (Version 1.0.0) [Data set]. Zenodo. https://doi.org/10.5281/zenodo.21381480
