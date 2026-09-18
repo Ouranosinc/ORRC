@@ -152,7 +152,9 @@ Target_variables:
     - sfcWind
     - pr
     - prmod
-  Daily_aggregates:
+  Exclude_daily:
+    - winddir
+  Add_daily:
     - tasmin
     - tasmax
     - hursmin

@@ -52,6 +52,8 @@ def main(config, version):
     working_dir.mkdir(parents=True, exist_ok=True)
 
     staging_dir = Path(CONFIG["main"]["staging_dir"].format(user=user))
+    staging_dir.mkdir(parents=True, exist_ok=True)
+
     reconstruction_root = staging_dir / CONFIG["main"]["reconstruction_dir"]
 
     overwrite = CONFIG["biasadjust"]["overwrite"]
@@ -270,51 +272,25 @@ def main(config, version):
             if dsout is not None:
                 date_start = dsout.time.min().dt.strftime('%Y%m%d').item()
                 outpath = xs.catutils.build_path(dsout, root=staging_dir, format=fmt, **facets)
+                outzip = outpath.with_suffix('.zarr.zip')
 
-                if not outpath.with_suffix('.zarr.zip').exists():
+                # update processing_level attr before saving; keeps the original path structure
+                dsout.attrs["processing_level"] = "biasadjusted"
+
+                if not outzip.exists() or overwrite:
+                    if outzip.exists() and overwrite:
+                        outzip.unlink()
                     outpath.parent.mkdir(parents=True, exist_ok=True)
                     zarr_to_zarr_zip(dsout, outpath, var, timechunk, fmt, working_dir, dask_kwargs)
-                    logging.info(f"Successfully created new file {outpath.with_suffix('.zarr.zip')}.")
-                else:
-                    # check if there is an existing file with the same start year but fewer time steps
-                    datelen, date_fmt = get_datelen_format(outpath)
-                    existing_zarrzip = list(outpath.parent.glob(f"{var}_*_{dsout.time.min().dt.strftime(date_fmt).item()}-*.zarr.zip"))
-                    if existing_zarrzip:
-                        assert len(existing_zarrzip) == 1, f"Multiple zarr.zip files with the same start date in {outpath.parent}. Need to investigate."
-                        existing_ds = xr.open_zarr(existing_zarrzip[0], consolidated=True, chunks={})
-                        # verify that the existing file has the same start date
-                        if "time" in dsout.dims and "time" in existing_ds.dims and date_start == existing_ds.time.min().dt.strftime('%Y%m%d').item():
-                            if len(dsout.time) > len(existing_ds.time):
-                                try:
-                                    os.remove(existing_zarrzip[0])
-                                    zarr_to_zarr_zip(dsout, outpath, var, timechunk, fmt, working_dir, dask_kwargs)
-                                    logging.info(f"{outpath.with_suffix('.zarr.zip')} is longer than existing {existing_zarrzip[0]}; overwriting.")
-                                except Exception as e:
-                                    logging.error(f"Error removing existing file {existing_zarrzip[0]}: {e}")
-                                    sys.exit("Unable to remove existing file. Exiting.")
-                            elif len(dsout.time) == len(existing_ds.time):
-                                if overwrite:
-                                    try:
-                                        os.remove(existing_zarrzip[0])
-                                        zarr_to_zarr_zip(dsout, outpath, var, timechunk, fmt, working_dir, dask_kwargs)
-                                        logging.info(f"{outpath.with_suffix('.zarr.zip')} has same length as existing {existing_zarrzip[0]} and overwrite=True; overwriting.")
-                                    except Exception as e:
-                                        logging.error(f"Error removing existing file {existing_zarrzip[0]}: {e}")
-                                        sys.exit("Unable to remove existing file. Exiting.")
-                                else:
-                                    logging.info(f"Skipping {outpath.with_suffix('.zarr.zip')} as it has the same number of time points as existing file and overwrite=False.")
-                                    continue
-                            else: # this scenario should not happen, but added for safety
-                                logging.warning(f"Skipping {outpath.with_suffix('.zarr.zip')} as it has fewer time points than existing file. Need to investigate.")
-                                continue
-                        existing_ds.close()
+                    logging.info(f"Successfully created new file {outzip}.")
                         
-                # remove any partial zarrs covered by complete years; should only occur for first run of the year
+                # remove any partial zarrs already covered
                 remove_list = remove_partial_zarrs(outpath.parent)
                 if remove_list:
                     for p in remove_list:
                         p.unlink()
-                        logging.info(f"Removed partial zarr file covered by complete year: {p}")
+                        logging.info(f"Removed partial zarr file already covered: {p}")
+
 
 if __name__ == "__main__":
 
