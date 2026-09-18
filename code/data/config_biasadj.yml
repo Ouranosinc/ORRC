@@ -13,12 +13,13 @@ biasadjust:
     v1.0:
       source: ORRC
       version: v1.0
-      url: ""
+      url: "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/dodsC/datasets/reanalyses/day_NAM_Ouranos_ORRC_v10.ncml"
   ref_product:
     v1.0:
       source: CaSR
       version: v3.2
       url: "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/dodsC/datasets/reanalyses/day_NAM_GovCan_CaSR_v32_1980-2024.ncml"
+      # Note: if the filename changes, get the most up-to-date filename from https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/datasets/reanalyses/catalog.html
   ref_period:
     v1.0:
       start_date: 2020-01-01
@@ -59,21 +60,22 @@ biasadjust:
 
 attrs:
   Conventions: "CF-1.8"
-  Remarks: "Original variable names are following the convention <Product>_<Type:A=Analysis,P=Prediction>_<ECCC name>_<Level/Tile/Category>. Variables with level '10000' are at surface level. The height [m] of variables with level '0XXXX' needs to be inferrred using the corresponding fields of geopotential height (GZ_0XXXX-GZ_10000). The variables UUC, VVC, UVC, and WDC are not modelled but inferred from UU and VV for convenience of the users. Precipitation (PR) is reported as 6-hr accumulations for CaPA_fine and CaPA_coarse. Precipitation (PR) are accumulations since beginning of the forecast for GEPS, GDPS, REPS, RDPS, HRDPS, and CaLDAS. The re-analysis product ORRC contains two variables for precipitation: 'RDPS_CaPA_P_PR_SFC' is the model precipitation (trial field used by CaPA) and 'RDPS_CaPA_A_PR_SFC' is precipitations adjusted with CaPA 6h precipitation. Please be aware that the baseflow 'O1' of the current version of WCPS is not reliable during the spring melt period."
+  Remarks: "Original variable names are following the convention <Product>_<Type:A=Analysis,P=Prediction>_<ECCC name>_<Level/Tile/Category>. Variables with level '10000' are at surface level. The height [m] of variables with level '0XXXX' needs to be inferrred using the corresponding fields of geopotential height (GZ_0XXXX-GZ_10000). The variables UUC, VVC, UVC, and WDC are not modelled but inferred from UU and VV for convenience of the users. Precipitation (PR) is reported as 6-hr accumulations for CaPA_fine and CaPA_coarse. Precipitation (PR) are accumulations since beginning of the forecast for GEPS, GDPS, REPS, RDPS, HRDPS, and CaLDAS. The re-analysis product ORRC contains two variables for precipitation: 'RDPS_CaPA_P_PR_SFC' is the model precipitation (trial field used by CaPA) and 'RDPS_CaPA_A_PR_SFC' is precipitations adjusted with CaPA 6h and 24h precipitation. Please be aware that the baseflow 'O1' of the current version of WCPS is not reliable during the spring melt period."
   bias_adjust_method : ""
   bias_adjust_project: ""
   bias_adjust_reference : ""
   contact: "bese.asli@ouranos.ca"
-  doi: ""
+  doi: "https://doi.org/10.5281/zenodo.21381480"
   domain: "NAM"
   frequency: "day"
   institution : "Ouranos"
-  licence_type : "open"
+  license_type: "open"
   license: "https://creativecommons.org/licenses/by/4.0/deed.en"
+  organisation: "Ouranos"
   prefix: "RDPS_CaPA_"
   processing_level : "raw"    # so that path structure is correct
   realm: "atmos"
   source: "ORRC-a"
-  terms_of_use: "ORRC-a data users should acknowledge The Canadian Surface Prediction Archive (CaSPAr) as the original data source (https://caspar-data.ca/, https://doi.org/10.1175/BAMS-D-19-0143.1)"
+  description: "Original data source: The Canadian Surface Prediction Archive (CaSPAr) (https://caspar-data.ca/, https://doi.org/10.1175/BAMS-D-19-0143.1) and GPSC-C (https://hpfx.collab.science.gc.ca/)."
   type: "reconstruction"
   version: ""

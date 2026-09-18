@@ -175,7 +175,7 @@ def main(version, processed_dir, required_time_window, var_list, tgt_file, loggi
                     print(f"Incomplete (some days missing): {month_logentry}")
             current_ts = last_of_month + timedelta(days = 1)
         
-    print("All mimic RDRS files have been created.")
+    print("All ORRC files have been created.")
     
 
 if __name__ == '__main__':
