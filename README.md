@@ -22,7 +22,7 @@ This repository contains a minimal example of the ORRC workflow using one week o
 2. Preprocess RDPS and CaPA data, including consistency and completeness checks of the raw files and interpolation onto the CaSR v3.2 grid.
 3. Create hourly ORRC data by combining consecutive 6- to 12-hour forecast lead-time segments from each RDPS cycle for all variables and blending RDPS precipitation fields with CaPA precipitation. ORRC output is saved as one NetCDF file per day.
 4. Convert ORRC variables and metadata to Climate and Forecast (CF) conventions, produce daily aggregates, and save each variable as a continuous `.zarr.zip` time series.
-5. Produce a bias-adjusted variant, ORRC-a, to reduce discrepancies relative to CaSR v3.2.
+5. Produce a bias-adjusted variant, ORRC-a, to reduce the mean bias relative to CaSR v3.2.
 
 In production, the workflow is typically run weekly on newly available RDPS and CaPA data obtained from ECCC's high-performance computer GPSC-C. This repository provides a lightweight example for testing and demonstration purposes.
 
