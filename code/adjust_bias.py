@@ -11,12 +11,14 @@ import os
 import sys
 
 from pathlib import Path
+from datetime import datetime
 import xarray as xr
 import xscen as xs
 import pandas as pd
 import xsdba
 
 from xscen.config import CONFIG, load_config
+import xclim
 
 from utils import split_ds, zarr_to_zarr_zip, format_user, get_datelen_format, remove_partial_zarrs
 
@@ -104,6 +106,7 @@ def main(config, version):
 
     all_zarrzip = list((reconstruction_root / domain).rglob("*.zarr.zip"))
 
+    adj_data = {}
     for var in var_specs:
         mod_files = []
 
@@ -267,8 +270,44 @@ def main(config, version):
                 timechunk += 1
 
         ds_adj = ds_adj.chunk({'rlat': 50, 'rlon': 50})
+        adj_data[var] = ds_adj
+    
+    # after all data have been adjusted, flip tasmax and tasmin when there is a temperature inversion
+    ds_tasmax = adj_data.get('tasmax')
+    ds_tasmin = adj_data.get('tasmin')
+    ds_tas = adj_data.get('tas')
 
-        for dsout in split_ds(ds_adj):
+    oldtasmax = ds_tasmax.copy()
+    oldtasmin = ds_tasmin.copy()
+
+    # find where tasmax < tasmin and swap them
+    valid_mask = ds_tasmax['tasmax'] >= ds_tasmin['tasmin']
+    ds_tasmax['tasmax'] = ds_tasmax['tasmax'].where(valid_mask.compute(), other=oldtasmin['tasmin'])
+    ds_tasmin['tasmin'] = ds_tasmin['tasmin'].where(valid_mask.compute(), other=oldtasmax['tasmax'])
+
+    ds_tasmax.tasmax.attrs["history"] = (
+        f"[{datetime.now():%Y-%m-%d %H:%M:%S}] : tasmax and tasmin swapped where tasmax < tasmin after the bias adjustment. "
+    ) + ds_tasmax.tasmax.attrs["history"]
+    ds_tasmin.tasmin.attrs["history"] = (
+        f"[{datetime.now():%Y-%m-%d %H:%M:%S}] : tasmax and tasmin swapped where tasmax < tasmin after the bias adjustment. "    
+    ) + ds_tasmin.tasmin.attrs["history"]
+
+    # find where tas is outside the range of tasmin and tasmax and fill it with their average 
+    valid_mask = (ds_tas['tas'] >= ds_tasmin['tasmin']) & (ds_tas['tas'] <= ds_tasmax['tasmax'])
+    fill_tas = xclim.convert.mean_temperature_from_max_and_min(tasmin=ds_tasmin['tasmin'], tasmax=ds_tasmax['tasmax'])
+    ds_tas['tas'] = ds_tas['tas'].where(valid_mask.compute(), other=fill_tas)
+
+    ds_tas.tas.attrs["history"] = (
+        f"[{datetime.now():%Y-%m-%d %H:%M:%S}] : tas swapped with the average of tasmin and tasmax where it is outside their range after the bias adjustment. "
+    ) + ds_tas.tas.attrs["history"]
+
+    # replace it in the adjusted data dictionary
+    adj_data['tas'] = ds_tas
+    adj_data['tasmax'] = ds_tasmax
+    adj_data['tasmin'] = ds_tasmin
+
+    for var, ds in adj_data.items():
+        for dsout in split_ds(ds):
             if dsout is not None:
                 date_start = dsout.time.min().dt.strftime('%Y%m%d').item()
                 outpath = xs.catutils.build_path(dsout, root=staging_dir, format=fmt, **facets)

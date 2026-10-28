@@ -18,7 +18,7 @@ biasadjust:
     v1.0:
       source: CaSR
       version: v3.2
-      url: "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/dodsC/datasets/reanalyses/day_NAM_GovCan_CaSR_v32_1980-2024.ncml"
+      url: "https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/dodsC/datasets/reanalyses/day_NAM_GovCan_CaSR_v32_1968-2024.ncml"
       # Note: if the filename changes, get the most up-to-date filename from https://pavics.ouranos.ca/twitcher/ows/proxy/thredds/catalog/datasets/reanalyses/catalog.html
   ref_period:
     v1.0:
