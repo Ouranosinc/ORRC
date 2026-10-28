@@ -116,4 +116,4 @@ We evaluated ORRC against CaSR v3.2 over the 2020–2024 period. Details of the 
 
 When using ORRC v1.0 or ORRC-a v1.0, please cite:
 
-Bese, A., & Logan, T. (2026). Ouranos Reconstruction – RDPS-CaPA (ORRC) v1.0 / Reconstruction Ouranos – RDPS‑CAPA (RORC) v1.0 (Version v1.0) [Dataset]. Zenodo. https://doi.org/10.5281/zenodo.21381479
+Bese, A., Logan, T., Gasset, N., Dimitrijevic, M., & Khedhaouiria, D. (2026). Ouranos Reconstruction – RDPS-CaPA (ORRC) v1.0 / Reconstruction Ouranos – RDPS‑CAPA (RORC) v1.0 (Version v1.0.2) [Dataset]. Zenodo. https://doi.org/10.5281/zenodo.21381479
